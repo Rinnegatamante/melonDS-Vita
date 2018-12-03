@@ -81,23 +81,23 @@ unsigned int TouchBoundLeft, TouchBoundRight, TouchBoundTop, TouchBoundBottom;
 SceUID EmuMutex;
 
 bool checkPressed(uint32_t button){
-	return (pad.buttons & button) && (!(oldpad & button));
+    return (pad.buttons & button) && (!(oldpad & button));
 }
 
 bool checkReleased(uint32_t button){
-	return (oldpad & button) && (!(pad.buttons & button));
+    return (oldpad & button) && (!(pad.buttons & button));
 }
 
 int y_printf = 60;
 void vita2d_printf(unsigned int color,  const char *format, ...) {
-	__gnuc_va_list arg;
-	int done;
-	va_start(arg, format);
-	char msg[512];
-	done = vsprintf(msg, format, arg);
-	va_end(arg);
-	vita2d_pgf_draw_text(font, 5, y_printf, color, 1.0, msg);
-	y_printf += 20;
+    __gnuc_va_list arg;
+    int done;
+    va_start(arg, format);
+    char msg[512];
+    done = vsprintf(msg, format, arg);
+    va_end(arg);
+    vita2d_pgf_draw_text(font, 5, y_printf, color, 1.0, msg);
+    y_printf += 20;
 }
 
 string Menu()
@@ -107,11 +107,11 @@ string Menu()
 
     while (rompath.find(".nds", (rompath.length() - 4)) == string::npos)
     {
-		
+        
         unsigned int selection = 0;
         vector<string> files;
 
-		SceUID dir = sceIoDopen(rompath.c_str());
+        SceUID dir = sceIoDopen(rompath.c_str());
         SceIoDirent entry;
         while (sceIoDread(dir, &entry) > 0)
         {
@@ -124,11 +124,11 @@ string Menu()
 
         while (true)
         {
-			y_printf = 60;
-			vita2d_start_drawing();
-			vita2d_clear_screen();
-			vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "melonDS " MELONDS_VERSION);
-			sceCtrlPeekBufferPositive(0, &pad, 1);
+            y_printf = 60;
+            vita2d_start_drawing();
+            vita2d_clear_screen();
+            vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "melonDS " MELONDS_VERSION);
+            sceCtrlPeekBufferPositive(0, &pad, 1);
 
             if (options)
             {
@@ -161,10 +161,10 @@ string Menu()
                     }
                     else
                     {
-						vita2d_printf(0xFFFFFFFF, "%s   %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
+                        vita2d_printf(0xFFFFFFFF, "%s   %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
                     }
                 }
-				vita2d_printf(0xFFFFFFFF, "");
+                vita2d_printf(0xFFFFFFFF, "");
                 vita2d_printf(0xFFFFFFFF, "Press Square to return to the file browser.");
             }
             else
@@ -201,22 +201,22 @@ string Menu()
                     else
                         vita2d_printf(0xFFFFFFFF, "%s", files[i].c_str());
                 }
-				
-				vita2d_printf(0xFFFFFFFF, "");
+                
+                vita2d_printf(0xFFFFFFFF, "");
                 vita2d_printf(0xFFFFFFFF, "Press Square to open the options menu.");
             }
 
             oldpad = pad.buttons;
-			vita2d_end_drawing();
-			vita2d_wait_rendering_done();
-			vita2d_swap_buffers();
-			
+            vita2d_end_drawing();
+            vita2d_wait_rendering_done();
+            vita2d_swap_buffers();
+            
         }
     }
-	
-	vita2d_end_drawing();
-	vita2d_wait_rendering_done();
-	vita2d_swap_buffers();
+    
+    vita2d_end_drawing();
+    vita2d_wait_rendering_done();
+    vita2d_swap_buffers();
 
     return rompath;
 }
@@ -320,7 +320,7 @@ int AdvFrame(unsigned int argc, void *args)
 
         while (chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - start).count() < (float)1 / 60);
     }
-	return 0;
+    return 0;
 }
 
 void FillAudioBuffer()
@@ -373,10 +373,10 @@ void PlayAudio(void *args)
 
 int melon_main(unsigned int argc, void *argv)
 {
-	vita2d_init();
-	vita2d_set_vblank_wait(0);
-	font = vita2d_load_default_pgf();
-	EmuMutex = sceKernelCreateMutex("Emu Mutex", 0, 0, NULL);
+    vita2d_init();
+    vita2d_set_vblank_wait(0);
+    font = vita2d_load_default_pgf();
+    EmuMutex = sceKernelCreateMutex("Emu Mutex", 0, 0, NULL);
     string rompath = Menu();
     string srampath = rompath.substr(0, rompath.rfind(".")) + ".sav";
     string statepath = rompath.substr(0, rompath.rfind(".")) + ".mln";
@@ -384,44 +384,44 @@ int melon_main(unsigned int argc, void *argv)
     Config::Load();
     if (!Config::HasConfigFile("bios7.bin") || !Config::HasConfigFile("bios9.bin") || !Config::HasConfigFile("firmware.bin"))
     {
-		while (true){
-			vita2d_start_drawing();
-			vita2d_clear_screen();
-			vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "One or more of the following required files don't exist or couldn't be accessed:");
-			vita2d_pgf_draw_text(font, 5, 40, 0xFFFFFFFF, 1.0, "bios7.bin -- ARM7 BIOS");
-			vita2d_pgf_draw_text(font, 5, 60, 0xFFFFFFFF, 1.0, "bios9.bin -- ARM9 BIOS");
-			vita2d_pgf_draw_text(font, 5, 80, 0xFFFFFFFF, 1.0, "firmware.bin -- firmware image");
-			vita2d_pgf_draw_text(font, 5, 150, 0xFFFFFFFF, 1.0, "Dump the files from your DS and place them in ux0:/data/melonDS");
-			
-			
-			vita2d_end_drawing();
-			vita2d_wait_rendering_done();
-			vita2d_swap_buffers();
-		}
+        while (true){
+            vita2d_start_drawing();
+            vita2d_clear_screen();
+            vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "One or more of the following required files don't exist or couldn't be accessed:");
+            vita2d_pgf_draw_text(font, 5, 40, 0xFFFFFFFF, 1.0, "bios7.bin -- ARM7 BIOS");
+            vita2d_pgf_draw_text(font, 5, 60, 0xFFFFFFFF, 1.0, "bios9.bin -- ARM9 BIOS");
+            vita2d_pgf_draw_text(font, 5, 80, 0xFFFFFFFF, 1.0, "firmware.bin -- firmware image");
+            vita2d_pgf_draw_text(font, 5, 150, 0xFFFFFFFF, 1.0, "Dump the files from your DS and place them in ux0:/data/melonDS");
+            
+            
+            vita2d_end_drawing();
+            vita2d_wait_rendering_done();
+            vita2d_swap_buffers();
+        }
     }
 
     NDS::Init();
     if (!NDS::LoadROM(rompath.c_str(), srampath.c_str(), Config::DirectBoot))
     {
-		while (true){
-			vita2d_start_drawing();
-			vita2d_clear_screen();
-			vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "Failed to load ROM. Make sure the file can be accessed.");
-			vita2d_end_drawing();
-			vita2d_wait_rendering_done();
-			vita2d_swap_buffers();
-		}
+        while (true){
+            vita2d_start_drawing();
+            vita2d_clear_screen();
+            vita2d_pgf_draw_text(font, 5, 20, 0xFFFFFFFF, 1.0, "Failed to load ROM. Make sure the file can be accessed.");
+            vita2d_end_drawing();
+            vita2d_wait_rendering_done();
+            vita2d_swap_buffers();
+        }
     }
 
-	sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
+    sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
     scePowerSetArmClockFrequency(444);
-	scePowerSetBusClockFrequency(222);
-	scePowerSetGpuClockFrequency(222);
-	scePowerSetGpuXbarClockFrequency(166);
+    scePowerSetBusClockFrequency(222);
+    scePowerSetGpuClockFrequency(222);
+    scePowerSetGpuXbarClockFrequency(166);
 
     SetScreenLayout();
 
-	SceUID main = sceKernelCreateThread("main", &AdvFrame, 0x10000100, 0x10000, 0, 0, NULL);
+    SceUID main = sceKernelCreateThread("main", &AdvFrame, 0x10000100, 0x10000, 0, 0, NULL);
     sceKernelStartThread(main, 0, NULL);
 
     //audoutInitialize();
@@ -437,26 +437,26 @@ int melon_main(unsigned int argc, void *argv)
     /*Thread audio;
     threadCreate(&audio, PlayAudio, NULL, 0x80000, 0x30, 0);
     threadStart(&audio);*/
-	
-	vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
-	vita2d_texture *gpu_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
-	vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_RW);
-	vita2d_texture *tex_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
+    
+    vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
+    vita2d_texture *gpu_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
+    vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_RW);
+    vita2d_texture *tex_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
     Framebuffer = (u32*)vita2d_texture_get_datap(tex_buffer);
 
     uint32_t keys[] = { SCE_CTRL_CROSS, SCE_CTRL_CIRCLE, SCE_CTRL_SELECT, SCE_CTRL_START, SCE_CTRL_RIGHT, SCE_CTRL_LEFT, SCE_CTRL_UP, SCE_CTRL_DOWN, SCE_CTRL_RTRIGGER, SCE_CTRL_LTRIGGER, SCE_CTRL_SQUARE, SCE_CTRL_TRIANGLE };
-	
+    
     while (true)
     {
 
-		sceCtrlPeekBufferPositive(0, &pad, 1);
+        sceCtrlPeekBufferPositive(0, &pad, 1);
 
         if (checkPressed(SCE_CTRL_LTRIGGER) || checkPressed(SCE_CTRL_RTRIGGER))
         {
             Savestate* state = new Savestate(const_cast<char*>(statepath.c_str()), checkPressed(SCE_CTRL_LTRIGGER));
             if (!state->Error)
             {
-				sceKernelLockMutex(EmuMutex, 1, NULL);
+                sceKernelLockMutex(EmuMutex, 1, NULL);
                 NDS::DoSavestate(state);
                 sceKernelUnlockMutex(EmuMutex, 1);
             }
@@ -470,14 +470,14 @@ int melon_main(unsigned int argc, void *argv)
             else if (checkReleased(keys[i]))
                 NDS::ReleaseKey(i > 9 ? i + 6 : i);
         }
-		
-		SceTouchData touch;
+        
+        SceTouchData touch;
         sceTouchPeek(SCE_TOUCH_PORT_FRONT, &touch, 1);
 
         if (touch.reportNum > 0)
         {
             
-			
+            
             if (touch.report[0].x > TouchBoundLeft && touch.report[0].x < TouchBoundRight && touch.report[0].y > TouchBoundTop && touch.report[0].y < TouchBoundBottom)
             {
                 int x, y;
@@ -510,17 +510,17 @@ int melon_main(unsigned int argc, void *argv)
             NDS::ReleaseKey(16 + 6);
             NDS::ReleaseScreen();
         }
-		
-		memcpy(vita2d_texture_get_datap(gpu_buffer),vita2d_texture_get_datap(tex_buffer),vita2d_texture_get_stride(gpu_buffer)*vita2d_texture_get_height(gpu_buffer));
-		vita2d_start_drawing();
-		vita2d_clear_screen();
-		vita2d_draw_texture_scale(gpu_buffer, 299, 0, 1.41, 1.41);
+        
+        memcpy(vita2d_texture_get_datap(gpu_buffer),vita2d_texture_get_datap(tex_buffer),vita2d_texture_get_stride(gpu_buffer)*vita2d_texture_get_height(gpu_buffer));
+        vita2d_start_drawing();
+        vita2d_clear_screen();
+        vita2d_draw_texture_scale(gpu_buffer, 299, 0, 1.41, 1.41);
         vita2d_end_drawing();
-		vita2d_wait_rendering_done();
-		vita2d_swap_buffers();
-		
-		oldpad = pad.buttons;
-		
+        vita2d_wait_rendering_done();
+        vita2d_swap_buffers();
+        
+        oldpad = pad.buttons;
+        
     }
 
     NDS::DeInit();
@@ -530,9 +530,9 @@ int melon_main(unsigned int argc, void *argv)
 }
 
 int main(int argc, char **argv){
-	SceUID main_thread = sceKernelCreateThread("melonDS", melon_main, 0x40, 0x800000, 0, 0, NULL);
-	if (main_thread >= 0){
-		sceKernelStartThread(main_thread, 0, NULL);
-		sceKernelWaitThreadEnd(main_thread, NULL, NULL);
-	}
+    SceUID main_thread = sceKernelCreateThread("melonDS", melon_main, 0x40, 0x800000, 0, 0, NULL);
+    if (main_thread >= 0){
+        sceKernelStartThread(main_thread, 0, NULL);
+        sceKernelWaitThreadEnd(main_thread, NULL, NULL);
+    }
 }
