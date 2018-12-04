@@ -80,7 +80,6 @@ vector<int*> OptionValues =
 
 u8 *BufferData[2];
 uint8_t AudioIdx = 0;
-//AudioOutBuffer AudioBuffer, *ReleasedBuffer;
 
 u32 *Framebuffer;
 unsigned int TouchBoundLeft, TouchBoundRight, TouchBoundTop, TouchBoundBottom;
@@ -296,32 +295,37 @@ int AdvFrame(unsigned int argc, void *args)
     return 0;
 }
 
+#define ORIG_SAMPLES               700
+#define TARGET_SAMPLES            1024
+#define ORIG_SRATE      32823.6328125f
+#define TARGET_SRATE             48000
+
 void FillAudioBuffer()
 {
-    s16 buf_in[700 * 2];
+    s16 buf_in[ORIG_SAMPLES * 2];
     s16 *buf_out = (s16*)BufferData[AudioIdx];
 
-    int num_in = SPU::ReadOutput(buf_in, 700);
-    int num_out = 1024;
+    int num_in = SPU::ReadOutput(buf_in, ORIG_SAMPLES);
+    int num_out = TARGET_SAMPLES;
 
     int margin = 6;
-    if (num_in < 700 - margin)
+    if (num_in < ORIG_SAMPLES - margin)
     {
         int last = num_in - 1;
         if (last < 0)
             last = 0;
 
-        for (int i = num_in; i < 700 - margin; i++)
+        for (int i = num_in; i < ORIG_SAMPLES - margin; i++)
             ((u32*)buf_in)[i] = ((u32*)buf_in)[last];
 
-        num_in = 700 - margin;
+        num_in = ORIG_SAMPLES - margin;
     }
 
     float res_incr = (float)num_in / num_out;
     float res_timer = 0;
     int res_pos = 0;
 
-    for (int i = 0; i < 1024; i++)
+    for (int i = 0; i < TARGET_SAMPLES; i++)
     {
         buf_out[i * 2] = buf_in[res_pos * 2];
         buf_out[i * 2 + 1] = buf_in[res_pos * 2 + 1];
@@ -337,7 +341,7 @@ void FillAudioBuffer()
 
 int PlayAudio(unsigned int argc, void *argv)
 {
-    int ch = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_MAIN, 1024, 48000, SCE_AUDIO_OUT_MODE_STEREO);
+    int ch = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_MAIN, TARGET_SAMPLES, TARGET_SRATE, SCE_AUDIO_OUT_MODE_STEREO);
     
     while (true)
     {
@@ -369,8 +373,6 @@ int melon_main(unsigned int argc, void *argv)
             vita2d_pgf_draw_text(font, 5, 60, 0xFFFFFFFF, 1.0, "bios9.bin -- ARM9 BIOS");
             vita2d_pgf_draw_text(font, 5, 80, 0xFFFFFFFF, 1.0, "firmware.bin -- firmware image");
             vita2d_pgf_draw_text(font, 5, 150, 0xFFFFFFFF, 1.0, "Dump the files from your DS and place them in ux0:/data/melonDS");
-            
-            
             vita2d_end_drawing();
             vita2d_wait_rendering_done();
             vita2d_swap_buffers();
@@ -401,10 +403,10 @@ int melon_main(unsigned int argc, void *argv)
     SceUID main = sceKernelCreateThread("main", &AdvFrame, 0x10000100, 0x10000, 0, 0, NULL);
     sceKernelStartThread(main, 0, NULL);
     
+    BufferData[0] = (u8*)malloc(4096);
     BufferData[1] = (u8*)malloc(4096);
-    BufferData[2] = (u8*)malloc(4096);
-    /*SceUID audio_thd = sceKernelCreateThread("audio", &PlayAudio, 0x10000100, 0x10000, 0, 0, NULL);
-    sceKernelStartThread(audio_thd, 0, NULL);*/
+    SceUID audio_thd = sceKernelCreateThread("audio", &PlayAudio, 0x10000100, 0x10000, 0, 0, NULL);
+    sceKernelStartThread(audio_thd, 0, NULL);
     
     vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
     vram_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
