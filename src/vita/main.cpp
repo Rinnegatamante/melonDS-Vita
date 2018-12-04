@@ -312,14 +312,14 @@ int AdvFrame(unsigned int argc, void *args)
 {
     while (true)
     {
-        chrono::steady_clock::time_point start = chrono::steady_clock::now();
+        //chrono::steady_clock::time_point start = chrono::steady_clock::now();
 
         sceKernelLockLwMutex(&EmuMutex, 1, NULL);
         NDS::RunFrame();
         sceKernelUnlockLwMutex(&EmuMutex, 1);
         memcpy(Framebuffer, GPU::Framebuffer, 256 * 384 * 4);
 
-        while (chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - start).count() < (float)1 / 60);
+        //while (chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - start).count() < (float)1 / 60);
     }
     return 0;
 }
