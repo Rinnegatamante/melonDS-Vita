@@ -72,7 +72,8 @@ vector<int*> OptionValues =
     &Config::ScreenLayout
 };
 
-u8 *BufferData;
+u8 *BufferData[2];
+uint8_t AudioIdx = 0;
 //AudioOutBuffer AudioBuffer, *ReleasedBuffer;
 
 u32 *Framebuffer;
@@ -325,30 +326,30 @@ int AdvFrame(unsigned int argc, void *args)
 
 void FillAudioBuffer()
 {
-    s16 buf_in[984 * 2];
-    s16 *buf_out = (s16*)BufferData;
+    s16 buf_in[700 * 2];
+    s16 *buf_out = (s16*)BufferData[AudioIdx];
 
-    int num_in = SPU::ReadOutput(buf_in, 984);
-    int num_out = 1440;
+    int num_in = SPU::ReadOutput(buf_in, 700);
+    int num_out = 1024;
 
     int margin = 6;
-    if (num_in < 984 - margin)
+    if (num_in < 700 - margin)
     {
         int last = num_in - 1;
         if (last < 0)
             last = 0;
 
-        for (int i = num_in; i < 984 - margin; i++)
+        for (int i = num_in; i < 700 - margin; i++)
             ((u32*)buf_in)[i] = ((u32*)buf_in)[last];
 
-        num_in = 984 - margin;
+        num_in = 700 - margin;
     }
 
     float res_incr = (float)num_in / num_out;
     float res_timer = 0;
     int res_pos = 0;
 
-    for (int i = 0; i < 1440; i++)
+    for (int i = 0; i < 1024; i++)
     {
         buf_out[i * 2] = buf_in[res_pos * 2];
         buf_out[i * 2 + 1] = buf_in[res_pos * 2 + 1];
@@ -362,14 +363,18 @@ void FillAudioBuffer()
     }
 }
 
-void PlayAudio(void *args)
+int PlayAudio(unsigned int argc, void *argv)
 {
-    /*while (true)
+    int ch = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_MAIN, 1024, 48000, SCE_AUDIO_OUT_MODE_STEREO);
+    
+    while (true)
     {
         FillAudioBuffer();
-        audoutPlayBuffer(&AudioBuffer, &ReleasedBuffer);
-    }*/
-}// We need a bigger stack to run Quake 2, so we create a new thread with a proper stack size
+        sceAudioOutOutput(ch, BufferData[AudioIdx]);
+        AudioIdx = (AudioIdx + 1) % 2;
+    }
+    return 0;
+}
 
 int melon_main(unsigned int argc, void *argv)
 {
@@ -423,20 +428,11 @@ int melon_main(unsigned int argc, void *argv)
 
     SceUID main = sceKernelCreateThread("main", &AdvFrame, 0x10000100, 0x10000, 0, 0, NULL);
     sceKernelStartThread(main, 0, NULL);
-
-    //audoutInitialize();
-    //audoutStartAudioOut();
-
-/*    BufferData = (u8*)memalign(0x1000, (1440 * 2 * 2 + 0xfff) & ~0xfff);
-    AudioBuffer.next = NULL;
-    AudioBuffer.buffer = BufferData;
-    AudioBuffer.buffer_size = (1440 * 2 * 2 + 0xfff) & ~0xfff;
-    AudioBuffer.data_size = 1440 * 2 * 2;
-    AudioBuffer.data_offset = 0;*/
-
-    /*Thread audio;
-    threadCreate(&audio, PlayAudio, NULL, 0x80000, 0x30, 0);
-    threadStart(&audio);*/
+    
+    BufferData[1] = (u8*)malloc(4096);
+    BufferData[2] = (u8*)malloc(4096);
+    /*SceUID audio_thd = sceKernelCreateThread("audio", &PlayAudio, 0x10000100, 0x10000, 0, 0, NULL);
+    sceKernelStartThread(audio_thd, 0, NULL);*/
     
     vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
     vita2d_texture *gpu_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
@@ -524,7 +520,6 @@ int melon_main(unsigned int argc, void *argv)
     }
 
     NDS::DeInit();
-    //audoutExit();
     vita2d_fini();
     return 0;
 }
