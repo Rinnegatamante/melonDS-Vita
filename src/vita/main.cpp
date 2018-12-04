@@ -57,7 +57,6 @@ vector<const char*> OptionDisplay =
     "Boot game directly",
     "Threaded 3D renderer",
     "Separate savefiles",
-    "Screen rotation",
     "Screen layout"
 };
 
@@ -66,8 +65,7 @@ vector<vector<const char*>> OptionValuesDisplay =
     { "Off", "On " },
     { "Off", "On " },
     { "Off", "On " },
-    { "0  ", "90 ", "180", "270" },
-    { "Vertical  ", "Horizontal" }
+    { "Standard", "Side by Side", "Vertical Rotated" }
 };
 
 vector<int*> OptionValues =
@@ -75,7 +73,6 @@ vector<int*> OptionValues =
     &Config::DirectBoot,
     &Config::Threaded3D,
     &Config::SavestateRelocSRAM,
-    &Config::ScreenRotation,
     &Config::ScreenLayout
 };
 
@@ -165,11 +162,11 @@ string Menu()
                 {
                     if (i == selection)
                     {
-                        vita2d_printf(0xFF00FFFF, "%s   %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
+                        vita2d_printf(0xFF00FFFF, "%s: %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
                     }
                     else
                     {
-                        vita2d_printf(0xFFFFFFFF, "%s   %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
+                        vita2d_printf(0xFFFFFFFF, "%s: %s", OptionDisplay[i], OptionValuesDisplay[i][*OptionValues[i]]);
                     }
                 }
                 vita2d_printf(0xFFFFFFFF, "");
@@ -239,30 +236,33 @@ void drawDouble(){
 }
 
 void drawSingleRotated(){
-	
-}
-
-void drawDoubleRotated(){
-	
+	vita2d_draw_texture_scale_rotate_hotspot(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale, 4.71239f, 0, 0);
 }
 
 void SetScreenLayout()
 {
-	if (Config::ScreenLayout == 0){
-		if (Config::ScreenRotation == 0){
+	switch (Config::ScreenLayout){
+		case 0:
 			drawFunc = drawSingle;
 			screen_scale = SCREEN_H / (192 * 2);
 			screen_x[0] = (SCREEN_W - 256 * screen_scale) / 2;
 			screen_y[0] = 0;
-		}
-	}else{
-		if (Config::ScreenRotation == 0){
+			break;
+		case 1:
 			drawFunc = drawDouble;
 			screen_scale = SCREEN_W / (256 * 2);
 			screen_x[0] = 0;
 			screen_x[1] = 256 * screen_scale;
 			screen_y[0] = screen_y[1] = (SCREEN_H - 192 * screen_scale) / 2;
-		}
+			break;
+		case 2:
+			drawFunc = drawSingleRotated;
+			screen_scale = SCREEN_H / 256;
+			screen_x[0] = (SCREEN_W - (192 * 2 * screen_scale)) / 2;
+			screen_y[0] = SCREEN_H - (SCREEN_H - 256 * screen_scale);
+			break;
+		default:
+			break;
 	}
     /*float width, height, offset_topX, offset_botX, offset_topY, offset_botY;
 
@@ -510,7 +510,6 @@ int melon_main(unsigned int argc, void *argv)
 
         if (touch.reportNum > 0)
         {
-            
             
             if (touch.report[0].x > TouchBoundLeft && touch.report[0].x < TouchBoundRight && touch.report[0].y > TouchBoundTop && touch.report[0].y < TouchBoundBottom)
             {
