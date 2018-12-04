@@ -43,7 +43,7 @@ vita2d_pgf *font;
 SceCtrlData pad;
 uint32_t oldpad = 0;
 
-int _newlib_heap_size_user = 192 * 1024 * 1024;
+int _newlib_heap_size_user = 330 * 1024 * 1024;
 
 vector<const char*> OptionDisplay =
 {
@@ -527,4 +527,5 @@ int main(int argc, char **argv){
         sceKernelStartThread(main_thread, 0, NULL);
         sceKernelWaitThreadEnd(main_thread, NULL, NULL);
     }
+	return 0;
 }
