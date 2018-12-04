@@ -30,6 +30,9 @@
 #define u64 u64_
 #define s64 s64_
 
+#define SCREEN_W 960.0f
+#define SCREEN_H 544.0f
+
 #include "../Config.h"
 #include "../Savestate.h"
 #include "../GPU.h"
@@ -40,10 +43,14 @@
 using namespace std;
 
 vita2d_pgf *font;
+vita2d_texture *vram_buffer;
 SceCtrlData pad;
 uint32_t oldpad = 0;
 
 int _newlib_heap_size_user = 330 * 1024 * 1024;
+int screen_x[2], screen_y[2];
+float screen_scale;
+void (*drawFunc)();
 
 vector<const char*> OptionDisplay =
 {
@@ -60,7 +67,7 @@ vector<vector<const char*>> OptionValuesDisplay =
     { "Off", "On " },
     { "Off", "On " },
     { "0  ", "90 ", "180", "270" },
-    { "Natural   ", "Vertical  ", "Horizontal" }
+    { "Vertical  ", "Horizontal" }
 };
 
 vector<int*> OptionValues =
@@ -222,8 +229,41 @@ string Menu()
     return rompath;
 }
 
+void drawSingle(){
+	vita2d_draw_texture_scale(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale);
+}
+
+void drawDouble(){
+	vita2d_draw_texture_part_scale(vram_buffer, screen_x[0], screen_y[0], 0, 0, 256, 192, screen_scale, screen_scale);
+	vita2d_draw_texture_part_scale(vram_buffer, screen_x[1], screen_y[1], 0, 192, 256, 192, screen_scale, screen_scale);
+}
+
+void drawSingleRotated(){
+	
+}
+
+void drawDoubleRotated(){
+	
+}
+
 void SetScreenLayout()
 {
+	if (Config::ScreenLayout == 0){
+		if (Config::ScreenRotation == 0){
+			drawFunc = drawSingle;
+			screen_scale = SCREEN_H / (192 * 2);
+			screen_x[0] = (SCREEN_W - 256 * screen_scale) / 2;
+			screen_y[0] = 0;
+		}
+	}else{
+		if (Config::ScreenRotation == 0){
+			drawFunc = drawDouble;
+			screen_scale = SCREEN_W / (256 * 2);
+			screen_x[0] = 0;
+			screen_x[1] = 256 * screen_scale;
+			screen_y[0] = screen_y[1] = (SCREEN_H - 192 * screen_scale) / 2;
+		}
+	}
     /*float width, height, offset_topX, offset_botX, offset_topY, offset_botY;
 
     if (Config::ScreenLayout == 0)
@@ -435,7 +475,7 @@ int melon_main(unsigned int argc, void *argv)
     sceKernelStartThread(audio_thd, 0, NULL);*/
     
     vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
-    vita2d_texture *vram_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
+    vram_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
     Framebuffer = (u32*)vita2d_texture_get_datap(vram_buffer);
 
     uint32_t keys[] = { SCE_CTRL_CROSS, SCE_CTRL_CIRCLE, SCE_CTRL_SELECT, SCE_CTRL_START, SCE_CTRL_RIGHT, SCE_CTRL_LEFT, SCE_CTRL_UP, SCE_CTRL_DOWN, SCE_CTRL_RTRIGGER, SCE_CTRL_LTRIGGER, SCE_CTRL_SQUARE, SCE_CTRL_TRIANGLE };
@@ -507,7 +547,7 @@ int melon_main(unsigned int argc, void *argv)
         
         vita2d_start_drawing();
         vita2d_clear_screen();
-        vita2d_draw_texture_scale(vram_buffer, 299, 0, 1.41, 1.41);
+		drawFunc();
         vita2d_end_drawing();
         vita2d_wait_rendering_done();
         vita2d_swap_buffers();
