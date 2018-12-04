@@ -435,10 +435,8 @@ int melon_main(unsigned int argc, void *argv)
     sceKernelStartThread(audio_thd, 0, NULL);*/
     
     vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW);
-    vita2d_texture *gpu_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
-    vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_RW);
-    vita2d_texture *tex_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
-    Framebuffer = (u32*)vita2d_texture_get_datap(tex_buffer);
+    vita2d_texture *vram_buffer = vita2d_create_empty_texture_format(256, 384, SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB);
+    Framebuffer = (u32*)vita2d_texture_get_datap(vram_buffer);
 
     uint32_t keys[] = { SCE_CTRL_CROSS, SCE_CTRL_CIRCLE, SCE_CTRL_SELECT, SCE_CTRL_START, SCE_CTRL_RIGHT, SCE_CTRL_LEFT, SCE_CTRL_UP, SCE_CTRL_DOWN, SCE_CTRL_RTRIGGER, SCE_CTRL_LTRIGGER, SCE_CTRL_SQUARE, SCE_CTRL_TRIANGLE };
     
@@ -507,10 +505,9 @@ int melon_main(unsigned int argc, void *argv)
             NDS::ReleaseScreen();
         }
         
-        memcpy(vita2d_texture_get_datap(gpu_buffer),vita2d_texture_get_datap(tex_buffer),vita2d_texture_get_stride(gpu_buffer)*vita2d_texture_get_height(gpu_buffer));
         vita2d_start_drawing();
         vita2d_clear_screen();
-        vita2d_draw_texture_scale(gpu_buffer, 299, 0, 1.41, 1.41);
+        vita2d_draw_texture_scale(vram_buffer, 299, 0, 1.41, 1.41);
         vita2d_end_drawing();
         vita2d_wait_rendering_done();
         vita2d_swap_buffers();
