@@ -78,7 +78,7 @@ u8 *BufferData;
 u32 *Framebuffer;
 unsigned int TouchBoundLeft, TouchBoundRight, TouchBoundTop, TouchBoundBottom;
 
-SceUID EmuMutex;
+SceKernelLwMutexWork EmuMutex __attribute__ ((aligned (8)));
 
 bool checkPressed(uint32_t button){
     return (pad.buttons & button) && (!(oldpad & button));
@@ -313,9 +313,9 @@ int AdvFrame(unsigned int argc, void *args)
     {
         chrono::steady_clock::time_point start = chrono::steady_clock::now();
 
-        sceKernelLockMutex(EmuMutex, 1, NULL);
+        sceKernelLockLwMutex(&EmuMutex, 1, NULL);
         NDS::RunFrame();
-        sceKernelUnlockMutex(EmuMutex, 1);
+        sceKernelUnlockLwMutex(&EmuMutex, 1);
         memcpy(Framebuffer, GPU::Framebuffer, 256 * 384 * 4);
 
         while (chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - start).count() < (float)1 / 60);
@@ -376,7 +376,7 @@ int melon_main(unsigned int argc, void *argv)
     vita2d_init();
     vita2d_set_vblank_wait(0);
     font = vita2d_load_default_pgf();
-    EmuMutex = sceKernelCreateMutex("Emu Mutex", 0, 0, NULL);
+    sceKernelCreateLwMutex(&EmuMutex, "Emu Mutex", 0, 0, NULL);
     string rompath = Menu();
     string srampath = rompath.substr(0, rompath.rfind(".")) + ".sav";
     string statepath = rompath.substr(0, rompath.rfind(".")) + ".mln";
@@ -456,9 +456,9 @@ int melon_main(unsigned int argc, void *argv)
             Savestate* state = new Savestate(const_cast<char*>(statepath.c_str()), checkPressed(SCE_CTRL_LTRIGGER));
             if (!state->Error)
             {
-                sceKernelLockMutex(EmuMutex, 1, NULL);
+                sceKernelLockLwMutex(&EmuMutex, 1, NULL);
                 NDS::DoSavestate(state);
-                sceKernelUnlockMutex(EmuMutex, 1);
+                sceKernelUnlockLwMutex(&EmuMutex, 1);
             }
             delete state;
         }
