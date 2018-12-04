@@ -40,6 +40,8 @@
 #include "../SPU.h"
 #include "../version.h"
 
+#define lerp(value, from_max, to_max) ((((value*10) * (to_max*10))/(from_max*10))/10)
+
 using namespace std;
 
 vita2d_pgf *font;
@@ -227,125 +229,55 @@ string Menu()
 }
 
 void drawSingle(){
-	vita2d_draw_texture_scale(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale);
+    vita2d_draw_texture_scale(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale);
 }
 
 void drawDouble(){
-	vita2d_draw_texture_part_scale(vram_buffer, screen_x[0], screen_y[0], 0, 0, 256, 192, screen_scale, screen_scale);
-	vita2d_draw_texture_part_scale(vram_buffer, screen_x[1], screen_y[1], 0, 192, 256, 192, screen_scale, screen_scale);
+    vita2d_draw_texture_part_scale(vram_buffer, screen_x[0], screen_y[0], 0, 0, 256, 192, screen_scale, screen_scale);
+    vita2d_draw_texture_part_scale(vram_buffer, screen_x[1], screen_y[1], 0, 192, 256, 192, screen_scale, screen_scale);
 }
 
 void drawSingleRotated(){
-	vita2d_draw_texture_scale_rotate_hotspot(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale, 4.71239f, 0, 0);
+    vita2d_draw_texture_scale_rotate_hotspot(vram_buffer, screen_x[0], screen_y[0], screen_scale, screen_scale, 4.71239f, 0, 0);
 }
 
 void SetScreenLayout()
 {
-	switch (Config::ScreenLayout){
-		case 0:
-			drawFunc = drawSingle;
-			screen_scale = SCREEN_H / (192 * 2);
-			screen_x[0] = (SCREEN_W - 256 * screen_scale) / 2;
-			screen_y[0] = 0;
-			break;
-		case 1:
-			drawFunc = drawDouble;
-			screen_scale = SCREEN_W / (256 * 2);
-			screen_x[0] = 0;
-			screen_x[1] = 256 * screen_scale;
-			screen_y[0] = screen_y[1] = (SCREEN_H - 192 * screen_scale) / 2;
-			break;
-		case 2:
-			drawFunc = drawSingleRotated;
-			screen_scale = SCREEN_H / 256;
-			screen_x[0] = (SCREEN_W - (192 * 2 * screen_scale)) / 2;
-			screen_y[0] = SCREEN_H - (SCREEN_H - 256 * screen_scale);
-			break;
-		default:
-			break;
-	}
-    /*float width, height, offset_topX, offset_botX, offset_topY, offset_botY;
-
-    if (Config::ScreenLayout == 0)
-        Config::ScreenLayout = (Config::ScreenRotation % 2 == 0) ? 1 : 2;
-
-    if (Config::ScreenLayout == 1)
-    {
-        height = 1.0f;
-        if (Config::ScreenRotation % 2 == 0)
-            width = height * 0.75;
-        else
-            width = height * 0.421875;
-
-        offset_topX = offset_botX = -width / 2;
-        offset_topY = height;
-        offset_botY = 0.0f;
+    switch (Config::ScreenLayout){
+        case 0:
+            drawFunc = drawSingle;
+            screen_scale = SCREEN_H / (192 * 2);
+            screen_x[0] = (SCREEN_W - 256 * screen_scale) / 2;
+            screen_y[0] = 0;
+            TouchBoundLeft = screen_x[0];
+            TouchBoundRight = TouchBoundLeft + 256 * screen_scale;
+            TouchBoundTop = SCREEN_H / 2;
+            TouchBoundBottom = SCREEN_H;
+            break;
+        case 1:
+            drawFunc = drawDouble;
+            screen_scale = SCREEN_W / (256 * 2);
+            screen_x[0] = 0;
+            screen_x[1] = 256 * screen_scale;
+            screen_y[0] = screen_y[1] = (SCREEN_H - 192 * screen_scale) / 2;
+            TouchBoundLeft = screen_x[1];
+            TouchBoundRight = TouchBoundLeft + 256 * screen_scale;
+            TouchBoundTop = screen_y[0];
+            TouchBoundBottom = TouchBoundTop + 192 * screen_scale;
+            break;
+        case 2:
+            drawFunc = drawSingleRotated;
+            screen_scale = SCREEN_H / 256;
+            screen_x[0] = (SCREEN_W - (192 * 2 * screen_scale)) / 2;
+            screen_y[0] = SCREEN_H - (SCREEN_H - 256 * screen_scale);
+            TouchBoundLeft = screen_x[0] + 192 * screen_scale;
+            TouchBoundRight = TouchBoundLeft + 192 * screen_scale;
+            TouchBoundTop = 0;
+            TouchBoundBottom = SCREEN_H;
+            break;
+        default:
+            break;
     }
-    else
-    {
-        if (Config::ScreenRotation % 2 == 0)
-        {
-            width = 1.0f;
-            height = width / 0.75;
-        }
-        else
-        {
-            height = 2.0f;
-            width = height * 0.421875;
-        }
-
-        offset_topX = -width;
-        offset_botX = 0.0f;
-        offset_topY = offset_botY = height / 2;
-    }
-
-    Vertex screens[] =
-    {
-        { { offset_topX + width, offset_topY - height, 0.0f }, { 1.0f, 1.0f } },
-        { { offset_topX,         offset_topY - height, 0.0f }, { 0.0f, 1.0f } },
-        { { offset_topX,         offset_topY,          0.0f }, { 0.0f, 0.0f } },
-        { { offset_topX,         offset_topY,          0.0f }, { 0.0f, 0.0f } },
-        { { offset_topX + width, offset_topY,          0.0f }, { 1.0f, 0.0f } },
-        { { offset_topX + width, offset_topY - height, 0.0f }, { 1.0f, 1.0f } },
-
-        { { offset_botX + width, offset_botY - height, 0.0f }, { 1.0f, 1.0f } },
-        { { offset_botX,         offset_botY - height, 0.0f }, { 0.0f, 1.0f } },
-        { { offset_botX,         offset_botY,          0.0f }, { 0.0f, 0.0f } },
-        { { offset_botX,         offset_botY,          0.0f }, { 0.0f, 0.0f } },
-        { { offset_botX + width, offset_botY,          0.0f }, { 1.0f, 0.0f } },
-        { { offset_botX + width, offset_botY - height, 0.0f }, { 1.0f, 1.0f } }
-    };
-
-    if (Config::ScreenRotation == 1 || Config::ScreenRotation == 2)
-    {
-        Vertex *copy = (Vertex*)malloc(sizeof(screens));
-        memcpy(copy, screens, sizeof(screens));
-        memcpy(screens, &copy[6], sizeof(screens) / 2);
-        memcpy(&screens[6], copy, sizeof(screens) / 2);
-    }
-
-    TouchBoundLeft = (screens[8].position[0] + 1) * 640;
-    TouchBoundRight = (screens[6].position[0] + 1) * 640;
-    TouchBoundTop = (-screens[8].position[1] + 1) * 360;
-    TouchBoundBottom = (-screens[6].position[1] + 1) * 360;
-
-    for (int i = 0; i < Config::ScreenRotation; i++)
-    {
-        for (int j = 0; j < 2; j++)
-        {
-            for (int k = 0; k < 12; k += 6)
-            {
-                screens[k].position[j] = screens[k + 1].position[j];
-                screens[k + 1].position[j] = screens[k + 2].position[j];
-                screens[k + 2].position[j] = screens[k + 4].position[j];
-                screens[k + 3].position[j] = screens[k + 4].position[j];
-                screens[k + 4].position[j] = screens[k + 5].position[j];
-                screens[k + 5].position[j] = screens[k].position[j];
-            }
-        }
-    }
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(screens), screens, GL_STATIC_DRAW);*/
 }
 
 int AdvFrame(unsigned int argc, void *args)
@@ -511,28 +443,24 @@ int melon_main(unsigned int argc, void *argv)
         if (touch.reportNum > 0)
         {
             
-            if (touch.report[0].x > TouchBoundLeft && touch.report[0].x < TouchBoundRight && touch.report[0].y > TouchBoundTop && touch.report[0].y < TouchBoundBottom)
+            int touch_x = lerp(touch.report[0].x, 1920, 960);
+            int touch_y = lerp(touch.report[0].y, 1088, 544);
+            
+            if (touch_x > TouchBoundLeft && touch_x < TouchBoundRight && touch_y > TouchBoundTop && touch_y < TouchBoundBottom)
             {
                 int x, y;
-                if (Config::ScreenRotation == 0)
-                {
-                    x = (touch.report[0].x - TouchBoundLeft) * 256.0f / (TouchBoundRight - TouchBoundLeft);
-                    y = (touch.report[0].y - TouchBoundTop) * 256.0f / (TouchBoundRight - TouchBoundLeft);
-                }
-                else if (Config::ScreenRotation == 1)
-                {
-                    x = (touch.report[0].y - TouchBoundTop) * 192.0f / (TouchBoundRight - TouchBoundLeft);
-                    y = 192 - (touch.report[0].x - TouchBoundLeft) * 192.0f / (TouchBoundRight - TouchBoundLeft);
-                }
-                else if (Config::ScreenRotation == 2)
-                {
-                    x = (touch.report[0].x - TouchBoundLeft) * -256.0f / (TouchBoundRight - TouchBoundLeft);
-                    y = 192 - (touch.report[0].y - TouchBoundTop) * 256.0f / (TouchBoundRight - TouchBoundLeft);
-                }
-                else
-                {
-                    x = (touch.report[0].y - TouchBoundTop) * -192.0f / (TouchBoundRight - TouchBoundLeft);
-                    y = (touch.report[0].x - TouchBoundLeft) * 192.0f / (TouchBoundRight - TouchBoundLeft);
+                switch (Config::ScreenLayout){
+                case 0:
+                case 1:
+                    x = (touch_x - TouchBoundLeft) / screen_scale;
+                    y = (touch_y - TouchBoundTop) / screen_scale;
+                    break;
+                case 2:
+                    x = (touch_y - TouchBoundLeft) / screen_scale;
+                    y = (touch_x - TouchBoundTop) / screen_scale;
+                    break;
+                default:
+                    break;
                 }
                 NDS::PressKey(16 + 6);
                 NDS::TouchScreen(x, y);
@@ -546,7 +474,7 @@ int melon_main(unsigned int argc, void *argv)
         
         vita2d_start_drawing();
         vita2d_clear_screen();
-		drawFunc();
+        drawFunc();
         vita2d_end_drawing();
         vita2d_wait_rendering_done();
         vita2d_swap_buffers();
@@ -566,5 +494,5 @@ int main(int argc, char **argv){
         sceKernelStartThread(main_thread, 0, NULL);
         sceKernelWaitThreadEnd(main_thread, NULL, NULL);
     }
-	return 0;
+    return 0;
 }
