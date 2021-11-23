@@ -25,6 +25,7 @@
 #include <vitasdk.h>
 #include <vita2d.h>
 #include <vector>
+#include <string>
 
 // Deal with conflicting typedefs
 #define u64 u64_
